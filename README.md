@@ -1,1 +1,173 @@
 # komeda-gachagacha
+<!DOCTYPE html>
+<html lang="ja">
+<head><link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#444">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コメダ予算ガチャ</title>
+
+<style>
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  background:#fafafa;margin:0;padding:20px;
+}
+h1{text-align:center;font-size:22px;}
+select,input,button{
+  width:100%;padding:12px;margin:6px 0;
+  font-size:16px;border-radius:8px;
+}
+button{border:none;background:#444;color:#fff;}
+.sub{background:#777;}
+.share{background:#1d9bf0;}
+
+.card{
+  background:#fff;border-radius:10px;
+  padding:15px;margin-top:15px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
+.line{margin:5px 0;}
+.total{font-size:18px;font-weight:bold;margin-top:10px;}
+.ok{color:#0a7f2e;}
+.over{color:#c40000;}
+.badge{font-size:12px;padding:4px 8px;border-radius:6px;margin-left:6px;}
+.ssr{background:#ffd700;}
+.fail{background:#ffb3b3;}
+
+.stats{
+  margin-top:15px;font-size:14px;
+  background:#fff;border-radius:10px;
+  padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
+.stats div{margin:4px 0;}
+</style>
+</head>
+
+<body>
+
+<h1>☕ コメダ予算ガチャ</h1>
+
+<select id="people">
+  <option value="1">👤 1人</option>
+  <option value="2">👥 2人</option>
+</select>
+
+<input type="number" id="budget" value="1000" min="300" step="100">
+
+<button onclick="draw('morning')">🌅 朝ガチャ</button>
+<button onclick="draw('lunch')">🌞 昼ガチャ</button>
+<button onclick="draw('night')">🌙 夜ガチャ</button>
+<button class="sub" onclick="redraw()">🔁 引き直し</button>
+<button class="share" onclick="share()">📣 Xで共有</button>
+
+<div class="card">
+  <div id="output">まだ回していません</div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<script>
+let lastTime=null,lastText="";
+let count=0,ssr=0,success=0,fail=0;
+
+const data={
+  morning:{
+    drinks:[["ブレンド",460],["アイス",460],["オーレ",500],["アイスオーレ",520],["ミルク",540],["アメリカン",460]],
+    food:[["モーニング(無料)",0],["小倉トースト",0],["ローブパン",0],["山食",0]],
+    extra:[["なし",0],["ゆで卵",50],["サラダ",120],["追加トースト",260],["クロワッサン",260],["ソフト",300]]
+  },
+  lunch:{
+    drinks:[["ブレンド",460],["アイス",460],["オーレ",500],["アイスオーレ",520],["クリソ",600],["コーラ",520]],
+    food:[["トースト",260],["小倉トースト",360],["ミニシロ",470],["ポテチキ",520],["クロワッサン",260],["サンド半分",500]],
+    extra:[["なし",0],["ミニデザ",250],["ソフト",300],["追加トースト",260],["引き直し",0]]
+  },
+  night:{
+    drinks:[["ブレンド",460],["アイス",460],["オーレ",500],["コーラ",520],["メロン",520],["クリソ",600]],
+    food:[["トースト",260],["ミニシロ",470],["ポテチキ",520],["チキンバス",700],["クロワッサン",260],["サンド半分",500]],
+    extra:[["なし",0],["ポテト",300],["ソフト",300],["デザート",250],["引き直し",0]]
+  }
+};
+
+const r=a=>a[Math.floor(Math.random()*a.length)];
+
+function updateURL(){
+  const p=document.getElementById("people").value;
+  const b=document.getElementById("budget").value;
+  history.replaceState(null,"",`?people=${p}&budget=${b}`);
+}
+
+function draw(time){
+  updateURL();
+  lastTime=time;
+  count++;
+
+  const people=Number(document.getElementById("people").value);
+  const budget=Number(document.getElementById("budget").value);
+
+  let items=[],total=0;
+
+  for(let i=0;i<people;i++){
+    let d=r(data[time].drinks);
+    items.push(`☕ ${d[0]}（${d[1]}）`);
+    total+=d[1];
+  }
+
+  let food=r(data[time].food);
+  let extra=r(data[time].extra);
+  total+=food[1]+extra[1];
+
+  let judge,cls;
+  if(total>=budget-50 && total<=budget+50){judge="SSR";cls="ok";ssr++;}
+  else if(total<=budget){judge="成功";cls="ok";success++;}
+  else{judge="爆死";cls="over";fail++;}
+
+  lastText=`【${time}・${people}人・${budget}円】
+${items.join(" / ")}
+${food[0]} + ${extra[0]}
+合計 ${total}円（${judge}）
+#コメダ予算ガチャ`;
+
+  document.getElementById("output").innerHTML=`
+    ${items.map(v=>`<div class="line">${v}</div>`).join("")}
+    <div class="line">🍞 ${food[0]}（${food[1]}）</div>
+    <div class="line">➕ ${extra[0]}（${extra[1]}）</div>
+    <div class="total ${cls}">
+      合計 ${total}円
+      <span class="badge ${judge==="SSR"?"ssr":"fail"}">${judge}</span>
+    </div>
+  `;
+
+  document.getElementById("stats").innerHTML=`
+    <div>🎰 回数：${count}</div>
+    <div>✨ SSR：${ssr}</div>
+    <div>✅ 成功：${success}</div>
+    <div>💀 爆死：${fail}</div>
+    <div>📊 成功率：${((ssr+success)/count*100).toFixed(1)}%</div>
+  `;
+}
+
+function redraw(){ if(lastTime) draw(lastTime); }
+
+function share(){
+  if(!lastText)return;
+  window.open(
+    "https://twitter.com/intent/tweet?text="+encodeURIComponent(lastText+location.search),
+    "_blank"
+  );
+}
+
+/* URL読み込み時の反映 */
+const q=new URLSearchParams(location.search);
+if(q.get("people"))document.getElementById("people").value=q.get("people");
+if(q.get("budget"))document.getElementById("budget").value=q.get("budget");
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+
+</body>
+</html>
