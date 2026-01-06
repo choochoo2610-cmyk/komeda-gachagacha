@@ -2,58 +2,52 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>コメダ 1000円ガチャ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コメダ1000円ガチャ</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#7b3f00">
 
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: sans-serif;
       background: #fff7e6;
-      margin: 0;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
     }
     h1 {
       color: #7b3f00;
     }
     .card {
       background: white;
-      border-radius: 12px;
-      padding: 20px;
-      max-width: 420px;
-      margin: 0 auto;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0px 3px 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      margin: 10px auto;
+      max-width: 440px;
+    }
+    select, button {
+      padding: 10px;
+      margin: 6px;
+      font-size: 16px;
     }
     button {
       background: #7b3f00;
       color: white;
       border: none;
       border-radius: 8px;
-      padding: 12px 16px;
-      font-size: 16px;
-      margin: 8px;
       cursor: pointer;
     }
-    button.secondary {
-      background: #aaa;
-    }
-    select {
-      padding: 8px;
-      margin: 6px;
-      font-size: 16px;
-    }
-    ul {
+    #result-list {
       text-align: left;
-      padding-left: 20px;
+      max-width: 400px;
+      margin: 10px auto;
     }
   </style>
 </head>
 
 <body>
+
   <h1>☕ コメダ1000円ガチャ</h1>
 
   <div class="card">
@@ -71,69 +65,59 @@
       </select>
     </div>
 
-    <button onclick="drawGacha()">🎲 ガチャを回す</button>
-    <button class="secondary" onclick="drawGacha()">🔄 引き直し</button>
-    <button class="secondary" onclick="share()">📤 シェア</button>
+    <button onclick="runGacha()">🎲 ガチャを回す</button>
 
-    <div id="result"></div>
+    <div id="result-list"></div>
   </div>
 
   <script>
-    const menu = [
+
+    const menuItems = [
       { name: "ブレンドコーヒー", price: 500 },
-      { name: "アイスコーヒー", price: 520 },
+      { name: "アイスコーヒー", price: 480 },
+      { name: "カフェオーレ", price: 520 },
       { name: "ミニシロノワール", price: 450 },
       { name: "シロノワール", price: 750 },
-      { name: "たっぷりカフェオレ", price: 620 },
-      { name: "小倉トースト", price: 480 },
+      { name: "小倉トースト", price: 380 },
       { name: "ミックスサンド", price: 720 },
-      { name: "みそカツパン", price: 880 }
+      { name: "ポテチキ", price: 520 }
     ];
 
-    function drawGacha() {
+    function runGacha() {
       const people = Number(document.getElementById("people").value);
       const budget = Number(document.getElementById("budget").value);
 
       let total = 0;
-      let result = [];
+      let picks = [];
 
-      while (result.length < people) {
-        const item = menu[Math.floor(Math.random() * menu.length)];
+      while (picks.length < people) {
+        const item = menuItems[Math.floor(Math.random() * menuItems.length)];
         if (total + item.price <= budget) {
-          result.push(item);
+          picks.push(item);
           total += item.price;
         } else {
           break;
         }
       }
 
-      const resultDiv = document.getElementById("result");
-      if (result.length === 0) {
-        resultDiv.innerHTML = "<p>❌ 予算内で選べませんでした</p>";
+      const resultDiv = document.getElementById("result-list");
+      if (picks.length === 0) {
+        resultDiv.innerHTML = `<p>❌ 予算内に収まらない組み合わせでした</p>`;
         return;
       }
 
-      resultDiv.innerHTML = `
-        <h3>結果（合計 ¥${total}）</h3>
-        <ul>
-          ${result.map(i => `<li>${i.name}（¥${i.price}）</li>`).join("")}
-        </ul>
-      `;
-    }
-
-    function share() {
-      const text = "コメダ1000円ガチャ回した！☕🎲";
-      if (navigator.share) {
-        navigator.share({ text, url: location.href });
-      } else {
-        alert("この端末ではシェア非対応です");
-      }
+      let html = `<h3>🎉 結果（合計: ¥${total}）</h3><ul>`;
+      picks.forEach(i => {
+        html += `<li>${i.name}（¥${i.price}）</li>`;
+      });
+      html += `</ul>`;
+      resultDiv.innerHTML = html;
     }
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js");
     }
   </script>
+
 </body>
 </html>
-
