@@ -1,12 +1,139 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>表示テスト</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>コメダ 1000円ガチャ</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7b3f00">
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #fff7e6;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #7b3f00;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 420px;
+      margin: 0 auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #7b3f00;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 16px;
+      margin: 8px;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #aaa;
+    }
+    select {
+      padding: 8px;
+      margin: 6px;
+      font-size: 16px;
+    }
+    ul {
+      text-align: left;
+      padding-left: 20px;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>GitHub Pages 表示OK</h1>
-  <p>ここが見えれば Pages は正常です。</p>
+  <h1>☕ コメダ1000円ガチャ</h1>
+
+  <div class="card">
+    <div>
+      人数：
+      <select id="people">
+        <option value="1">1人</option>
+        <option value="2" selected>2人</option>
+      </select>
+      予算：
+      <select id="budget">
+        <option value="800">800円</option>
+        <option value="1000" selected>1000円</option>
+        <option value="1200">1200円</option>
+      </select>
+    </div>
+
+    <button onclick="drawGacha()">🎲 ガチャを回す</button>
+    <button class="secondary" onclick="drawGacha()">🔄 引き直し</button>
+    <button class="secondary" onclick="share()">📤 シェア</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const menu = [
+      { name: "ブレンドコーヒー", price: 500 },
+      { name: "アイスコーヒー", price: 520 },
+      { name: "ミニシロノワール", price: 450 },
+      { name: "シロノワール", price: 750 },
+      { name: "たっぷりカフェオレ", price: 620 },
+      { name: "小倉トースト", price: 480 },
+      { name: "ミックスサンド", price: 720 },
+      { name: "みそカツパン", price: 880 }
+    ];
+
+    function drawGacha() {
+      const people = Number(document.getElementById("people").value);
+      const budget = Number(document.getElementById("budget").value);
+
+      let total = 0;
+      let result = [];
+
+      while (result.length < people) {
+        const item = menu[Math.floor(Math.random() * menu.length)];
+        if (total + item.price <= budget) {
+          result.push(item);
+          total += item.price;
+        } else {
+          break;
+        }
+      }
+
+      const resultDiv = document.getElementById("result");
+      if (result.length === 0) {
+        resultDiv.innerHTML = "<p>❌ 予算内で選べませんでした</p>";
+        return;
+      }
+
+      resultDiv.innerHTML = `
+        <h3>結果（合計 ¥${total}）</h3>
+        <ul>
+          ${result.map(i => `<li>${i.name}（¥${i.price}）</li>`).join("")}
+        </ul>
+      `;
+    }
+
+    function share() {
+      const text = "コメダ1000円ガチャ回した！☕🎲";
+      if (navigator.share) {
+        navigator.share({ text, url: location.href });
+      } else {
+        alert("この端末ではシェア非対応です");
+      }
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 </body>
 </html>
 
