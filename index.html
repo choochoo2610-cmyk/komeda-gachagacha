@@ -114,75 +114,44 @@ function runGacha() {
 
   let total = 0;
   let result = [];
-  let usedFreeItem = false; // ← 0円対策
+  let usedZeroPrice = false;
 
-  // 最低人数分
+  function canAdd(item) {
+    if (item.price === 0 && usedZeroPrice) return false;
+    return total + item.price <= budget;
+  }
+
+  // 人数分は必ず回す
   for (let i = 0; i < people; i++) {
-    const ok = menu.filter(m => {
-      if (m.price === 0 && usedFreeItem) return false;
-      return total + m.price <= budget;
-    });
-    if (ok.length === 0) break;
+    const candidates = menu.filter(canAdd);
+    if (candidates.length === 0) break;
 
-    const item = ok[Math.floor(Math.random() * ok.length)];
+    const item = candidates[Math.floor(Math.random() * candidates.length)];
     result.push(item);
     total += item.price;
-    if (item.price === 0) usedFreeItem = true;
+    if (item.price === 0) usedZeroPrice = true;
   }
 
-  // 予算ギリギリまで
-  while (true) {
-    const ok = menu.filter(m => {
-      if (m.price === 0 && usedFreeItem) return false;
-      return total + m.price <= budget;
-    });
-    if (ok.length === 0) break;
+  // 残金消化
+  let safety = 0;
+  while (safety < 100) { // ← 無限防止保険
+    const candidates = menu.filter(canAdd);
+    if (candidates.length === 0) break;
 
-    const item = ok[Math.floor(Math.random() * ok.length)];
+    const item = candidates[Math.floor(Math.random() * candidates.length)];
     result.push(item);
     total += item.price;
-    if (item.price === 0) usedFreeItem = true;
+    if (item.price === 0) usedZeroPrice = true;
+
+    safety++;
   }
 
-  let html = `<h3>${period} ガチャ結果（¥${total}）</h3><ul>`;
-  result.forEach(r => {
-    html += `<li>${r.name}（¥${r.price}）</li>`;
-  });
-  html += `</ul><p>残金 ¥${budget - total}</p>`;
-
-  document.getElementById("result").innerHTML = html;
+  document.getElementById("result").innerHTML =
+    `<h3>${period} ガチャ結果（¥${total}）</h3>
+     <ul>${result.map(r => `<li>${r.name}（¥${r.price}）</li>`).join("")}</ul>
+     <p>残金 ¥${budget - total}</p>`;
 }
 
-  // ① 最低人数分を確保
-  for (let i = 0; i < people; i++) {
-    const affordable = menuItems.filter(i => total + i.price <= budget);
-    if (affordable.length === 0) break;
-    const item = affordable[Math.floor(Math.random() * affordable.length)];
-    picks.push(item);
-    total += item.price;
-  }
-
-  // ② 予算ギリギリまで追加
-  while (true) {
-    const affordable = menuItems.filter(i => total + i.price <= budget);
-    if (affordable.length === 0) break;
-    const item = affordable[Math.floor(Math.random() * affordable.length)];
-    picks.push(item);
-    total += item.price;
-  }
-
-  const resultDiv = document.getElementById("result-list");
-  if (picks.length === 0) {
-    resultDiv.innerHTML = `<p>❌ 予算内で選べませんでした</p>`;
-    return;
-  }
-
-  let html = `<h3>🎉 ${period} ガチャ 結果（合計：¥${total}）</h3><ul>`;
-  picks.forEach(i => {
-    html += `<li>${i.name}（¥${i.price}）</li>`;
-  });
-  html += `</ul>`;
-  html += `<p>残金：¥${budget - total}</p>`;
 
   resultDiv.innerHTML = html;
 }
