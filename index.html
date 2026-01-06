@@ -1,185 +1,155 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head><link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#444">
-<link rel="apple-touch-icon" href="icon-192.png">
-
-<meta charset="UTF-8">
+<head>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>コメダ予算ガチャ</title>
+<title>コメダ1000円ガチャ（時間帯対応）</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7b3f00">
 <style>
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
-  background:#fafafa;margin:0;padding:20px;
-}
-h1{text-align:center;font-size:22px;}
-select,input,button{
-  width:100%;padding:12px;margin:6px 0;
-  font-size:16px;border-radius:8px;
-}
-button{border:none;background:#444;color:#fff;}
-.sub{background:#777;}
-.share{background:#1d9bf0;}
-
-.card{
-  background:#fff;border-radius:10px;
-  padding:15px;margin-top:15px;
-  box-shadow:0 2px 6px rgba(0,0,0,.08);
-}
-.line{margin:5px 0;}
-.total{font-size:18px;font-weight:bold;margin-top:10px;}
-.ok{color:#0a7f2e;}
-.over{color:#c40000;}
-.badge{font-size:12px;padding:4px 8px;border-radius:6px;margin-left:6px;}
-.ssr{background:#ffd700;}
-.fail{background:#ffb3b3;}
-
-.stats{
-  margin-top:15px;font-size:14px;
-  background:#fff;border-radius:10px;
-  padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.08);
-}
-.stats div{margin:4px 0;}
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #fff7e6;
+    margin: 0;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px auto;
+    max-width: 460px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  }
+  select, button {
+    padding: 10px;
+    margin: 6px;
+    font-size: 16px;
+  }
+  button {
+    background: #7b3f00;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #result-list {
+    text-align: left;
+    margin-top: 12px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 </head>
 
 <body>
 
-<h1>☕ コメダ予算ガチャ</h1>
-
-<select id="people">
-  <option value="1">👤 1人</option>
-  <option value="2">👥 2人</option>
-</select>
-
-<input type="number" id="budget" value="1000" min="300" step="100">
-
-<button onclick="draw('morning')">🌅 朝ガチャ</button>
-<button onclick="draw('lunch')">🌞 昼ガチャ</button>
-<button onclick="draw('night')">🌙 夜ガチャ</button>
-<button class="sub" onclick="redraw()">🔁 引き直し</button>
-<button class="share" onclick="share()">📣 Xで共有</button>
+<h1>☕ コメダ 予算ガチャ（時間帯対応）</h1>
 
 <div class="card">
-  <div id="output">まだ回していません</div>
+  <div>
+    人数：
+    <select id="people">
+      <option value="1">1人</option>
+      <option value="2" selected>2人</option>
+    </select>
+    予算：
+    <select id="budget">
+      <option value="800">800円</option>
+      <option value="1000" selected>1000円</option>
+      <option value="1200">1200円</option>
+      <option value="1500">1500円</option>
+    </select>
+  </div>
+
+  <button onclick="runGacha()">🎲 ガチャを回す</button>
+
+  <div id="result-list"></div>
 </div>
 
-<div class="stats" id="stats"></div>
-
 <script>
-let lastTime=null,lastText="";
-let count=0,ssr=0,success=0,fail=0;
 
-const data={
-  morning:{
-    drinks:[["ブレンド",460],["アイス",460],["オーレ",500],["アイスオーレ",520],["ミルク",540],["アメリカン",460]],
-    food:[["モーニング(無料)",0],["小倉トースト",0],["ローブパン",0],["山食",0]],
-    extra:[["なし",0],["ゆで卵",50],["サラダ",120],["追加トースト",260],["クロワッサン",260],["ソフト",300]]
-  },
-  lunch:{
-    drinks:[["ブレンド",460],["アイス",460],["オーレ",500],["アイスオーレ",520],["クリソ",600],["コーラ",520]],
-    food:[["トースト",260],["小倉トースト",360],["ミニシロ",470],["ポテチキ",520],["クロワッサン",260],["サンド半分",500]],
-    extra:[["なし",0],["ミニデザ",250],["ソフト",300],["追加トースト",260],["引き直し",0]]
-  },
-  night:{
-    drinks:[["ブレンド",460],["アイス",460],["オーレ",500],["コーラ",520],["メロン",520],["クリソ",600]],
-    food:[["トースト",260],["ミニシロ",470],["ポテチキ",520],["チキンバス",700],["クロワッサン",260],["サンド半分",500]],
-    extra:[["なし",0],["ポテト",300],["ソフト",300],["デザート",250],["引き直し",0]]
-  }
+// 🍽 朝・昼・夜メニュー
+const menus = {
+  morning: [
+    { name: "モーニングトースト（バター）", price: 0 },
+    { name: "モーニングトースト（ジャム）", price: 0 },
+    { name: "ゆで卵", price: 50 },
+    { name: "ミニサラダ", price: 120 },
+    { name: "ミニクロワッサン", price: 260 }
+  ],
+  lunch: [
+    { name: "トースト", price: 260 },
+    { name: "小倉トースト", price: 360 },
+    { name: "ミニシロノワール", price: 470 },
+    { name: "ポテチキ", price: 520 },
+    { name: "ミックスサンド", price: 500 }
+  ],
+  night: [
+    { name: "トースト", price: 260 },
+    { name: "ミニシロノワール", price: 470 },
+    { name: "ポテチキ", price: 520 },
+    { name: "チキンバスケット", price: 700 },
+    { name: "サンド半分", price: 500 }
+  ]
 };
 
-const r=a=>a[Math.floor(Math.random()*a.length)];
-
-function updateURL(){
-  const p=document.getElementById("people").value;
-  const b=document.getElementById("budget").value;
-  history.replaceState(null,"",`?people=${p}&budget=${b}`);
+// 現在の時間帯判定
+function getCurrentPeriod() {
+  const hour = new Date().getHours();
+  if (hour < 11) return "morning";
+  if (hour < 17) return "lunch";
+  return "night";
 }
 
-function draw(time){
-  updateURL();
-  lastTime=time;
-  count++;
+// ガチャ本体
+function runGacha() {
+  const people = Number(document.getElementById("people").value);
+  const budget = Number(document.getElementById("budget").value);
 
-  const people=Number(document.getElementById("people").value);
-  const budget=Number(document.getElementById("budget").value);
+  const period = getCurrentPeriod();
+  const menuItems = [...menus[period]];
 
-  let items=[],total=0;
+  let total = 0;
+  let picks = [];
 
-  for(let i=0;i<people;i++){
-    let d=r(data[time].drinks);
-    items.push(`☕ ${d[0]}（${d[1]}）`);
-    total+=d[1];
+  // ① 最低人数分を確保
+  for (let i = 0; i < people; i++) {
+    const affordable = menuItems.filter(i => total + i.price <= budget);
+    if (affordable.length === 0) break;
+    const item = affordable[Math.floor(Math.random() * affordable.length)];
+    picks.push(item);
+    total += item.price;
   }
 
-  let food=r(data[time].food);
-  let extra=r(data[time].extra);
-  total+=food[1]+extra[1];
+  // ② 予算ギリギリまで追加
+  while (true) {
+    const affordable = menuItems.filter(i => total + i.price <= budget);
+    if (affordable.length === 0) break;
+    const item = affordable[Math.floor(Math.random() * affordable.length)];
+    picks.push(item);
+    total += item.price;
+  }
 
-  let judge,cls;
- let judge, cls;
-if (total >= budget - 50 && total <= budget + 50) {
-  judge = "SSR";
-  cls = "ok";
-  ssr++;
-} else if (total <= budget) {
-  judge = "成功";
-  cls = "ok";
-  success++;
-} else {
-  judge = "爆死";
-  cls = "over";
-  fail++;
-}
-  else if(total<=budget){judge="成功";cls="ok";success++;}
-  else{judge="爆死";cls="over";fail++;}
+  const resultDiv = document.getElementById("result-list");
+  if (picks.length === 0) {
+    resultDiv.innerHTML = `<p>❌ 予算内で選べませんでした</p>`;
+    return;
+  }
 
-  lastText=`【${time}・${people}人・${budget}円】
-${items.join(" / ")}
-${food[0]} + ${extra[0]}
-合計 ${total}円（${judge}）
-#コメダ予算ガチャ`;
+  let html = `<h3>🎉 ${period} ガチャ 結果（合計：¥${total}）</h3><ul>`;
+  picks.forEach(i => {
+    html += `<li>${i.name}（¥${i.price}）</li>`;
+  });
+  html += `</ul>`;
+  html += `<p>残金：¥${budget - total}</p>`;
 
-  document.getElementById("output").innerHTML=`
-    ${items.map(v=>`<div class="line">${v}</div>`).join("")}
-    <div class="line">🍞 ${food[0]}（${food[1]}）</div>
-    <div class="line">➕ ${extra[0]}（${extra[1]}）</div>
-    <div class="total ${cls}">
-      合計 ${total}円
-      <span class="badge ${judge==="SSR"?"ssr":"fail"}">${judge}</span>
-    </div>
-  `;
-
-  document.getElementById("stats").innerHTML=`
-    <div>🎰 回数：${count}</div>
-    <div>✨ SSR：${ssr}</div>
-    <div>✅ 成功：${success}</div>
-    <div>💀 爆死：${fail}</div>
-    <div>📊 成功率：${((ssr+success)/count*100).toFixed(1)}%</div>
-  `;
+  resultDiv.innerHTML = html;
 }
 
-function redraw(){ if(lastTime) draw(lastTime); }
-
-function share(){
-  if(!lastText)return;
-  window.open(
-    "https://twitter.com/intent/tweet?text="+encodeURIComponent(lastText+location.search),
-    "_blank"
-  );
-}
-
-/* URL読み込み時の反映 */
-const q=new URLSearchParams(location.search);
-if(q.get("people"))document.getElementById("people").value=q.get("people");
-if(q.get("budget"))document.getElementById("budget").value=q.get("budget");
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
-}
-</script>
-
 </body>
 </html>
