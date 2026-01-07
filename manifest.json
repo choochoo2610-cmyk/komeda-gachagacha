@@ -1,1 +1,8 @@
-manifest.json
+{
+  "name": "コメダ1000円ガチャ",
+  "short_name": "コメダガチャ",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7a4a2e"
+}
