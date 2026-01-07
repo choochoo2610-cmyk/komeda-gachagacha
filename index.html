@@ -64,6 +64,20 @@
       <option value="1500">1500円</option>
     </select>
   </div>
+<div id="timeSelect">
+  <label>
+    <input type="radio" name="period" value="morning" checked>
+    朝
+  </label>
+  <label>
+    <input type="radio" name="period" value="lunch">
+    昼
+  </label>
+  <label>
+    <input type="radio" name="period" value="night">
+    夜
+  </label>
+</div>
 
   <button onclick="runGacha()">🎲 ガチャを回す</button>
 
@@ -89,18 +103,16 @@ const menus = {
   ]
 };
 
-function getPeriod() {
-  const hour = new Date().getHours();
-  if (hour < 11) return "morning";
-  if (hour < 17) return "lunch";
-  return "night";
-}
-
 function runGacha() {
   const people = Number(document.getElementById("people").value);
   const budget = Number(document.getElementById("budget").value);
-  const period = getPeriod();
+
+  const period = document.querySelector(
+    'input[name="period"]:checked'
+  ).value;
+
   const menu = menus[period];
+
 
   let total = 0;
   let result = [];
@@ -134,13 +146,24 @@ function runGacha() {
     if (item.price === 0) usedZeroPrice = true;
 
     safety++;
-  }
-
-  document.getElementById("result").innerHTML =
-    `<h3>${period} ガチャ結果（¥${total}）</h3>
-     <ul>${result.map(r => `<li>${r.name}（¥${r.price}）</li>`).join("")}</ul>
-     <p>残金 ¥${budget - total}</p>`;
 }
+const text =
+  `【コメダ1000円ガチャ】\n` +
+  `${period === "morning" ? "朝" : period === "lunch" ? "昼" : "夜"}ガチャ\n` +
+  result.map(r => `・${r.name}（¥${r.price}）`).join("\n") +
+  `\n合計 ¥${total}\n残金 ¥${budget - total}\n` +
+  `#コメダガチャ`;
+
+document.getElementById("result").innerHTML = `
+  <h3>ガチャ結果</h3>
+  <ul>${result.map(r => `<li>${r.name}（¥${r.price}）</li>`).join("")}</ul>
+  <p>合計 ¥${total}（残金 ¥${budget - total}）</p>
+
+  <button onclick="shareResult()">SNSでシェア</button>
+`;
+
+window.shareText = text;
+
 </script>
 
 </body>
