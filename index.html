@@ -70,6 +70,24 @@
   <div id="result-list"></div>
 </div>
 <script>
+const menus = {
+  morning: [
+    { name: "モーニングトースト", price: 0 },
+    { name: "コメダブレンド", price: 460 },
+    { name: "ミニサラダ", price: 200 }
+  ],
+  lunch: [
+    { name: "ミックスサンド", price: 680 },
+    { name: "ナポリタン", price: 770 },
+    { name: "アイスコーヒー", price: 480 }
+  ],
+  night: [
+    { name: "シロノワール", price: 730 },
+    { name: "たっぷりブレンド", price: 560 },
+    { name: "みそカツパン", price: 880 }
+  ]
+};
+
 function getPeriod() {
   const hour = new Date().getHours();
   if (hour < 11) return "morning";
