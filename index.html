@@ -113,67 +113,62 @@ function runGacha() {
 
   const menu = menus[period];
 
-
   let total = 0;
   let result = [];
-  let usedZeroPrice = false;
+  let usedZero = false;
 
   function canAdd(item) {
-    if (item.price === 0 && usedZeroPrice) return false;
+    if (item.price === 0 && usedZero) return false;
     return total + item.price <= budget;
   }
 
-  // 人数分は必ず選ぶ
   for (let i = 0; i < people; i++) {
     const candidates = menu.filter(canAdd);
     if (candidates.length === 0) break;
-
     const item = candidates[Math.floor(Math.random() * candidates.length)];
     result.push(item);
     total += item.price;
-    if (item.price === 0) usedZeroPrice = true;
+    if (item.price === 0) usedZero = true;
   }
 
-  // 残金消化（安全装置つき）
-  let safety = 0;
-  while (safety < 100) {
+  let guard = 0;
+  while (guard < 100) {
     const candidates = menu.filter(canAdd);
     if (candidates.length === 0) break;
-
     const item = candidates[Math.floor(Math.random() * candidates.length)];
     result.push(item);
     total += item.price;
-    if (item.price === 0) usedZeroPrice = true;
+    if (item.price === 0) usedZero = true;
+    guard++;
+  }
 
-    safety++;
+  const periodLabel =
+    period === "morning" ? "朝" :
+    period === "lunch" ? "昼" : "夜";
+
+  const shareText =
+    `【コメダ1000円ガチャ】\n${periodLabel}ガチャ\n` +
+    result.map(r => `・${r.name}（¥${r.price}）`).join("\n") +
+    `\n合計 ¥${total}\n残金 ¥${budget - total}\n#コメダガチャ`;
+
+  window.shareText = shareText;
+
+  document.getElementById("result").innerHTML = `
+    <h3>${periodLabel}ガチャ結果</h3>
+    <ul>${result.map(r => `<li>${r.name}（¥${r.price}）</li>`).join("")}</ul>
+    <p>合計 ¥${total}（残金 ¥${budget - total}）</p>
+    <button onclick="shareResult()">SNSでシェア</button>
+  `;
 }
-const text =
-  `【コメダ1000円ガチャ】\n` +
-  `${period === "morning" ? "朝" : period === "lunch" ? "昼" : "夜"}ガチャ\n` +
-  result.map(r => `・${r.name}（¥${r.price}）`).join("\n") +
-  `\n合計 ¥${total}\n残金 ¥${budget - total}\n` +
-  `#コメダガチャ`;
 
-document.getElementById("result").innerHTML = `
-  <h3>ガチャ結果</h3>
-  <ul>${result.map(r => `<li>${r.name}（¥${r.price}）</li>`).join("")}</ul>
-  <p>合計 ¥${total}（残金 ¥${budget - total}）</p>
-
-  <button onclick="shareResult()">SNSでシェア</button>
-`;
-
-window.shareText = text;
 function shareResult() {
   if (navigator.share) {
-    navigator.share({
-      text: window.shareText
-    });
+    navigator.share({ text: window.shareText });
   } else {
     navigator.clipboard.writeText(window.shareText);
-    alert("シェア文をコピーしました！");
+    alert("シェア文をコピーしました");
   }
 }
-
 </script>
 
 </body>
