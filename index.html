@@ -163,6 +163,16 @@ document.getElementById("result").innerHTML = `
 `;
 
 window.shareText = text;
+function shareResult() {
+  if (navigator.share) {
+    navigator.share({
+      text: window.shareText
+    });
+  } else {
+    navigator.clipboard.writeText(window.shareText);
+    alert("シェア文をコピーしました！");
+  }
+}
 
 </script>
 
